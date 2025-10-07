@@ -776,7 +776,16 @@
                 let unsubscribe = () => {};
 
                 const handleSignIn = async () => {
-                    if (!app || !auth || !db) return;
+                    // CRITICAL: Check if Firebase is available/configured. If not, bypass for local testing/Vercel.
+                    if (!app || !auth || !db) {
+                         setAuthState(prev => ({ 
+                            ...prev, 
+                            isSubscriber: true, // Force access in demo mode
+                            isAuthReady: true,
+                            userId: 'LOCAL_DEMO_USER'
+                        }));
+                        return;
+                    }
 
                     try {
                         let userCredential;
@@ -821,7 +830,7 @@
                 return () => {
                     if (unsubscribe) unsubscribe();
                 };
-            }, [auth, db, isFirebaseConfigured]); // Added isFirebaseConfigured to dependencies
+            }, [app, auth, db]); // Use app/auth/db as dependencies
 
 
             // 2. PAYWALL/SUBSCRIPTION LOGIC
@@ -880,19 +889,7 @@
 
             const renderScreen = () => {
                 if (!authState.isAuthReady) {
-                    // Check if Firebase is configured but still loading auth
-                    if (isFirebaseConfigured) {
-                         return <LoadingSpinner />;
-                    } else {
-                        // If Firebase is not configured (e.g., on Vercel), show the start screen immediately
-                        // and allow access, as no paywall can be enforced.
-                        return <PaywallScreen 
-                            onStartQuiz={handleStartQuiz} 
-                            isSubscriber={true} // Force subscriber status since there's no way to pay/auth
-                            onSimulatePurchase={() => console.log('Authentication disabled.')}
-                            onStartSample={handleStartSample}
-                        />;
-                    }
+                    return <LoadingSpinner />;
                 }
 
                 switch (currentScreen) {
@@ -924,7 +921,7 @@
                 <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4">
                     <div className="w-full max-w-2xl mt-8 mb-12">
                         <div className="flex justify-between items-center mb-4 text-gray-500 text-sm">
-                            <span>{authState.isSubscriber ? 'Status: Full Access' : (isFirebaseConfigured ? 'Status: Free Mode' : 'Status: Local Demo')}</span>
+                            <span>{authState.isSubscriber ? 'Status: Full Access' : (authState.isAuthReady && authState.userId !== 'LOCAL_DEMO_USER' ? 'Status: Free Mode' : 'Status: Local Demo')}</span>
                             <span className="truncate">User ID: {authState.userId || '---'}</span>
                         </div>
                         {renderScreen()}
