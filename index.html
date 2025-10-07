@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBCT in Endodontics Mastery Quiz</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font family for a clean look -->
+    <style>
+      body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body>
+    <!-- This is where the React application will be mounted -->
+    <div id="root"></div>
+
+    <!-- Load React and ReactDOM Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Load Babel to transpile JSX on the client side for this simple setup -->
+    <!-- Vercel will usually handle this during the build process for a standard React project -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Load the main React application file -->
+    <script type="text/babel" src="src/App.jsx"></script>
+
+    <script type="text/babel">
+        // Standard React entry point
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            ReactDOM.createRoot(rootElement).render(<App />);
+        }
+    </script>
+</body>
+</html>
