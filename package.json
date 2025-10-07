@@ -1,0 +1,9 @@
+{
+  "name": "dental-quiz-app",
+  "version": "1.0.0",
+  "description": "Professional CBCT Quiz Application built with React.",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'No build required'"
+  }
+}
