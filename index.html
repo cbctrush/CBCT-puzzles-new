@@ -24,11 +24,899 @@
 <body>
     <div id="root"></div>
 
-    <!-- The Quiz Application Code is injected here for client-side compilation -->
-    <!-- We use the type="text/babel" and point to the App.jsx file -->
-    <script type="text/babel" data-type="module" data-src="src/App.jsx"></script>
-    
     <script type="text/babel">
+        // Start of the Quiz Application Code (formerly src/App.jsx)
+        
+        // Global variables provided by the environment for Firebase setup
+        const __app_id = typeof window !== 'undefined' ? window.__app_id : 'default-app-id';
+        const __firebase_config = typeof window !== 'undefined' ? window.__firebase_config : '{}';
+        const __initial_auth_token = typeof window !== 'undefined' ? window.__initial_auth_token : undefined;
+
+        const { useState, useEffect, useMemo, useCallback } = React;
+        const firebaseConfig = JSON.parse(__firebase_config);
+        
+        // --- THEME CONSTANTS (Oceanic Theme) ---
+        const COLOR_PRIMARY = 'bg-blue-600';
+        const COLOR_PRIMARY_HOVER = 'hover:bg-blue-700';
+        const COLOR_PRIMARY_TEXT = 'text-white';
+        
+        const COLOR_ACCENT = 'bg-teal-400';
+        const COLOR_ACCENT_HOVER = 'hover:bg-teal-500';
+        const COLOR_ACCENT_TEXT = 'text-gray-900';
+
+        const FREE_QUESTION_COUNT = 2;
+
+        // --- QUIZ DATA ---
+        const quizData = [
+          {
+            "question": "What dental anomaly is shown in the images?",
+            "options": ["Dens in-dente (dens invaginatus)", "Dens evaginatus", "Interal root resorption", "None of the above"],
+            "answer": "Dens in-dente (dens invaginatus)",
+            "images": [
+              "https://i.imgur.com/4YRHvHr.jpeg",
+              "https://i.imgur.com/rEThN73.jpeg"
+            ],
+            "explanation": "DENS IN DENTE refers to dens invaginatus, a rare developmental anomaly where the tooth's enamel folds inward during formation, creating a deep invagination or cavity that can resemble a \"tooth within a tooth\"",
+            "answerImage": "https://i.imgur.com/dnyhyCk.jpeg",
+            "category": ["Developmental"]
+          },
+          {
+            "question": "True or false: the radiolucent finding at the apex of this fused MB-P root can be caused by an untreated canal.",
+            "options": ["True", "False"],
+            "answer": "True",
+            "images": [
+              "https://i.imgur.com/pv5yCxx.jpeg"
+            ],
+            "explanation": "Although we cannot distinctly see a dark line suggestive of a canal, there could be an untreated canal located between the MB and P canal. This was the case here; a few months after treating that canal only, the radiolucent finding cleared and the apex appeard normal.",
+            "answerImage": "https://i.imgur.com/WrD9dvJ.jpeg",
+            "category": ["Endodontics", "Radiology"]
+          },
+          {
+            "question": "A vertical root fracture on an endodontically treated typically occurs:",
+            "options": ["On the buccal or lingual of the root", "On the mesial or distal of the root"],
+            "answer": "On the buccal or lingual of the root",
+            "images": [
+              "https://i.imgur.com/pi7l4xG.jpeg",
+              "https://i.imgur.com/4mqC45e.jpeg"
+            ],
+            "explanation": "The typical pattern for a vertical root fracture in an endodontivcally treated tooth is a longitudinal fracture located on the bucal or lingual (or both)",
+            "answerImage": null,
+            "category": ["Fractures"]
+          },
+          {
+            "question": "Here is a sagittal slice through the distal root of a lower second molar. The yellow arrow is on the:",
+            "options": ["Buccal aspecto of the mandible", "Lingual aspect of the mandible"],
+            "answer": "Buccal aspecto of the mandible",
+            "images": [
+              "https://i.imgur.com/YLAqdnO.jpeg"
+            ],
+            "explanation": "We know that around the level of the mabibular second molar, there is lingual concavity in the body of the mandible, making the lingual cortex very thin, and the buccal cortex at that level is usually much thicker (opposite side of the arrow)",
+            "answerImage": null,
+            "category": ["CBCT Basics", "Anatomy"]
+          },
+          {
+            "question": "Here is an axial slice through the maxillary posterior teeth. The arrow is pointing to the MB root of the first molar. We can confidently say that there is no MB2 canal present inside that root.",
+            "options": ["True", "False"],
+            "answer": "False",
+            "images": [
+              "https://i.imgur.com/CLNt9pL.jpeg"
+            ],
+            "explanation": "Most of the time, the MB2 canal is too small to detect on the images. However, the fact that the root is oval and the MB1 canal is off-centered towards the buccal is highly suggestive of the presence of an MB2. This was the case here. The MB root was retreated an the patient's symptoms and infection resolved.",
+            "answerImage": "https://i.imgur.com/P7x9r0Z.jpeg",
+            "category": ["Anatomy", "Endodontics"]
+          },
+          {
+            "question": "An additional disto-lingual root on a lower molar (usually first molar) is know as what?",
+            "options": ["Radix Entomolaris", "Radix Paramolaris"],
+            "answer": "Radix Entomolaris",
+            "images": [
+              "https://i.imgur.com/gDPxhzp.png",
+              "https://i.imgur.com/LBJzPsh.png"
+            ],
+            "explanation": "Radix entomolaris is a significant anatomical variation where a mandibular first molar has an additional, extra root located distolingually ",
+            "answerImage": "https://i.imgur.com/hrgV5ru.jpeg",
+            "category": ["Anatomy"]
+          },
+          {
+            "question": "The small radiolucency visible on an axial slice, located on the distal of this second molar is probably due to:",
+            "options": ["Generalized periodontal disease", "A vertical root fracture", "A crack on the distal wall extending below the bone level", "None of the above"],
+            "answer": "A crack on the distal wall extending below the bone level",
+            "images": [
+              "https://i.imgur.com/BOWYxcN.jpeg"
+            ],
+            "explanation": "A crack on the distal marginal ridge, which has progressed apically, below the crestal bone tends to create a very small and narrow area of localized bone loss adjacent to the crack. The crack itself is usually too small to be detected by the imaging.",
+            "answerImage": "https://i.imgur.com/T1GKBka.jpeg",
+            "category": ["Fractures"]
+          },
+          {
+            "question": "The yellow arrow is pointing to an area of :",
+            "options": ["Inflammatory root resorption", "External cervical resorption", "Internal root resorption", "None of the above"],
+            "answer": "External cervical resorption",
+            "images": [
+              "https://i.imgur.com/fTXsjay.jpeg",
+              "https://i.imgur.com/TUJ0Ex3.jpeg"
+            ],
+            "explanation": "This was a strange tooth, which had all three types of resorption. External cervical resorption starts at the level of the connective tissue attachment and progresses  inside the dentin, but typically does not involve the pulp because of the protective nature of the predentin.",
+            "answerImage": "https://i.imgur.com/xI5xzPY.jpeg",
+            "category": ["Resorption"]
+          },
+          {
+            "question": "The radiolucent area, as pointed out by the yellow arrows and suggestive of crestal bone loss on the palatal and mesial aspect of the upper first molar is more likely due to:",
+            "options": ["A primary periodontal problem", "A crack or fracture or the tooth or root"],
+            "answer": "A primary periodontal problem",
+            "images": [
+              "https://i.imgur.com/q3UAAf3.jpeg"
+            ],
+            "explanation": "Fractures and crack typically produce a very narrow and localized area of bone loss adjacent to the site of the fracture. However, here the radiolucent area is quite extensive. Teeth that have not had root canals also tend to crack on the mesial or distal wall. Of course, a clinical exam is needed to correlate these findings.",
+            "answerImage": null,
+            "category": ["Diagnostics"]
+          },
+          {
+            "question": "The yellow arrow points to :",
+            "options": ["An endodontic infection", "A normal anatomical structure"],
+            "answer": "A normal anatomical structure",
+            "images": [
+              "https://i.imgur.com/GjChvnu.jpeg"
+            ],
+            "explanation": "This is an axial slice going through the apices of the maxillary anterior teeth. The radilucent area is coonsistent with the nasopalatine duct.",
+            "answerImage": null,
+            "category": ["Diagnostics", "Anatomy"]
+          },
+          {
+            "question": "Studies on the diagnostic accuracy of CBCT for assessing root-filled teeth have indicated that approximately what percentage of histologically healthy roots may be misclassified as diseased?",
+            "options": ["5%", "20%", "47%", "75%"],
+            "answer": "20%",
+            "images": [],
+            "explanation": "Kruse et al. observed that approximately 20% of roots with canal fillings that were histologically verified as having healthy periapical tissues could be misclassified as diseased in CBCT scans. This highlights the risk of over-treating root-filled teeth.",
+            "answerImage": null,
+            "category": ["Diagnostics", "Endodontics"]
+          },
+          {
+            "question": "What is the primary factor that reduces the sensitivity and specificity of CBCT in detecting Vertical Root Fractures (VRFs) in endodontically treated teeth?",
+            "options": ["The need for surgical confirmation (gold standard)", "The fracture being too large to fit the limited FOV", "Artifacts from high-density materials like gutta-percha or metal posts", "The inability to distinguish between a crack and a craze line"],
+            "answer": "Artifacts from high-density materials like gutta-percha or metal posts",
+            "images": [],
+            "explanation": "High-density materials like gutta-percha and metal posts cause star-shaped streak artifacts and scatter/beam hardening. These artifacts can mimic or obscure fracture lines, significantly reducing the diagnostic accuracy of the CBCT scan for VRFs.",
+            "answerImage": null,
+            "category": ["Fractures", "CBCT Basics"]
+          },
+          {
+            "question": "Compared to a full Field of View (FOV) CBCT, a limited FOV CBCT unit typically offers:",
+            "options": ["A larger voxel size", "A wider diameter", "Higher resolution and greater utility for endodontics", "A higher radiation dose"],
+            "answer": "Higher resolution and greater utility for endodontics",
+            "images": [],
+            "explanation": "Limited FOV CBCT typically uses a smaller voxel size (0.1–0.2 mm) compared to full FOV. A smaller voxel size leads to higher spatial resolution, making the limited FOV ideal for detailed endodontic diagnosis and planning.",
+            "answerImage": null,
+            "category": ["CBCT Basics"]
+          },
+          {
+            "question": "What is the critical consideration that must be balanced against the potential benefits of using Cone Beam Computed Tomography (CBCT) compared to conventional dental imaging?",
+            "options": ["The speed of image acquisition.", "The comparatively higher risk from radiation exposure.", "The reduced geometric distortion in 3D images.", "The cost-effectiveness of the imaging technology."],
+            "answer": "The comparatively higher risk from radiation exposure.",
+            "images": [],
+            "explanation": "The potential benefits of CBCT must always be balanced with the comparatively higher levels of risk from radiation exposure, compared to conventional imaging.",
+            "answerImage": null,
+            "category": ["CBCT Basics"]
+          },
+          {
+            "question": "Which scenario does the AAE/AAOMR position statement specifically recommend considering CBCT for initial endodontic treatment?",
+            "options": ["Routine single-canal incisors", "Teeth with the potential for extra canals and complex morphology", "All retreatment cases regardless of symptoms", "Diagnosis of isolated deep periodontal pockets"],
+            "answer": "Teeth with the potential for extra canals and complex morphology",
+            "images": [],
+            "explanation": "Recommendation three of the AAE/AAOMR position statement recommends CBCT for initial treatment of teeth with complex morphology or the potential for extra canals (like maxillary molars) to ensure all canal systems are identified and treated.",
+            "answerImage": null,
+            "category": ["Treatment Planning"]
+          },
+          {
+            "question": "What is the main function of Metal Artifact Reduction (MAR) algorithms in CBCT imaging?",
+            "options": ["To increase the field of view (FOV) of the scan.", "To mathematically approximate true detail and reduce streak artifacts around high-density materials.", "To reduce the radiation dose during image acquisition.", "To enhance the spatial resolution of the small voxel size."],
+            "answer": "To mathematically approximate true detail and reduce streak artifacts around high-density materials.",
+            "images": [],
+            "explanation": "MAR algorithms are post-processing programs that analyze image areas with artifacts (streak, beam hardening) caused by metal and approximate the true detail, essentially smoothing the image to improve diagnostic clarity near restorations.",
+            "answerImage": null,
+            "category": ["CBCT Basics"]
+          }
+        ];
+
+        // --- UTILITY FUNCTIONS ---
+        
+        // Fisher-Yates shuffle algorithm
+        const shuffleArray = (array) => {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        };
+
+        const getUniqueCategories = (data) => {
+            const categories = new Set();
+            data.forEach(item => {
+                if (Array.isArray(item.category)) {
+                    item.category.forEach(cat => categories.add(cat));
+                }
+            });
+            return Array.from(categories).sort();
+        };
+
+        // --- FIREBASE SETUP ---
+        let app, auth, db;
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        } catch (e) {
+            console.error("Firebase Initialization Error:", e);
+        }
+
+        // --- COMPONENTS ---
+
+        const LoadingSpinner = () => (
+            <div className="flex justify-center items-center h-full py-12">
+                <div className="w-8 h-8 border-4 border-t-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
+        );
+
+        const Button = ({ children, onClick, className = '', color = 'primary', disabled = false }) => {
+            let baseStyle, hoverStyle, textStyle;
+
+            if (color === 'primary') {
+                baseStyle = COLOR_PRIMARY;
+                hoverStyle = COLOR_PRIMARY_HOVER;
+                textStyle = COLOR_PRIMARY_TEXT;
+            } else if (color === 'accent') {
+                baseStyle = COLOR_ACCENT;
+                hoverStyle = COLOR_ACCENT_HOVER;
+                textStyle = COLOR_ACCENT_TEXT;
+            } else if (color === 'danger') {
+                baseStyle = 'bg-red-500';
+                hoverStyle = 'hover:bg-red-600';
+                textStyle = 'text-white';
+            } else {
+                baseStyle = 'bg-gray-300';
+                hoverStyle = 'hover:bg-gray-400';
+                textStyle = 'text-gray-800';
+            }
+
+            const disabledStyle = disabled ? 'opacity-50 cursor-not-allowed' : `${hoverStyle} cursor-pointer`;
+
+            return (
+                <button
+                    onClick={!disabled ? onClick : null}
+                    className={`w-full py-3 px-4 font-semibold rounded-lg shadow-md transition-colors duration-200 ${baseStyle} ${textStyle} ${disabledStyle} ${className}`}
+                    disabled={disabled}
+                >
+                    {children}
+                </button>
+            );
+        };
+
+        const ZoomModal = ({ imageUrl, onClose }) => {
+            if (!imageUrl) return null;
+
+            return (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4 transition-opacity duration-300"
+                    onClick={onClose}
+                >
+                    <div className="relative w-full h-full max-w-4xl max-h-full">
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 text-white text-3xl font-bold z-50 p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors"
+                            aria-label="Close"
+                        >
+                            &times;
+                        </button>
+                        <img 
+                            src={imageUrl} 
+                            alt="Zoomed Question Image" 
+                            className="block w-full h-full object-contain" 
+                            onClick={e => e.stopPropagation()} // Prevents closing when clicking the image
+                            onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/800x600/ef4444/ffffff?text=Image+Load+Error"; }}
+                        />
+                    </div>
+                </div>
+            );
+        };
+
+        const ImageCarousel = ({ images }) => {
+            if (!images || images.length === 0) return (
+                <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 mb-4">
+                    No image available for this question.
+                </div>
+            );
+
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isZoomed, setIsZoomed] = useState(false);
+
+            const nextImage = (e) => {
+                e.stopPropagation();
+                setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+            };
+
+            const prevImage = (e) => {
+                e.stopPropagation();
+                setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+            };
+
+            const currentImage = images[currentIndex];
+
+            return (
+                <div className="relative mb-4">
+                    <div 
+                        className="w-full h-64 sm:h-80 bg-gray-100 rounded-lg overflow-hidden shadow-lg cursor-zoom-in group"
+                        onClick={() => setIsZoomed(true)}
+                    >
+                        <img 
+                            src={currentImage} 
+                            alt={`Question image ${currentIndex + 1} of ${images.length}`} 
+                            className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-[1.01]" 
+                            onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/800x600/ef4444/ffffff?text=Image+Load+Error"; }}
+                        />
+                    </div>
+
+                    {images.length > 1 && (
+                        <>
+                            {/* Navigation Arrows */}
+                            <button
+                                onClick={prevImage}
+                                className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-80 transition-opacity"
+                                aria-label="Previous image"
+                            >
+                                &lsaquo;
+                            </button>
+                            <button
+                                onClick={nextImage}
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-80 transition-opacity"
+                                aria-label="Next image"
+                            >
+                                &rsaquo;
+                            </button>
+
+                            {/* Indicators */}
+                            <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2">
+                                {images.map((_, index) => (
+                                    <span
+                                        key={index}
+                                        className={`block w-2 h-2 rounded-full transition-all duration-300 ${index === currentIndex ? COLOR_PRIMARY : 'bg-white bg-opacity-50'}`}
+                                        onClick={(e) => { e.stopPropagation(); setCurrentIndex(index); }}
+                                    ></span>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                    
+                    <ZoomModal 
+                        imageUrl={isZoomed ? currentImage : null} 
+                        onClose={() => setIsZoomed(false)} 
+                    />
+                </div>
+            );
+        };
+        
+        // --- QUIZ SCREEN COMPONENT ---
+
+        const QuizScreen = ({ questions, onQuizEnd, onTerminate }) => {
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [userAnswers, setUserAnswers] = useState([]);
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [feedbackVisible, setFeedbackVisible] = useState(false);
+            const [score, setScore] = useState(0);
+            const [isReviewing, setIsReviewing] = useState(false);
+
+            const currentQuestion = questions[currentQuestionIndex];
+            const isLastQuestion = currentQuestionIndex === questions.length - 1;
+            const isAnswered = selectedOption !== null;
+
+            const handleOptionSelect = (option) => {
+                if (feedbackVisible) return;
+                setSelectedOption(option);
+            };
+
+            const handleSubmitAnswer = () => {
+                if (!isAnswered) return;
+
+                const isCorrect = selectedOption === currentQuestion.answer;
+                
+                // Update score
+                if (isCorrect) {
+                    setScore(prev => prev + 1);
+                }
+
+                // Record answer for review
+                const answerRecord = {
+                    ...currentQuestion,
+                    userSelection: selectedOption,
+                    isCorrect: isCorrect,
+                };
+                setUserAnswers(prev => [...prev, answerRecord]);
+
+                setFeedbackVisible(true);
+            };
+
+            const handleNextQuestion = () => {
+                if (!feedbackVisible) return;
+
+                if (isLastQuestion) {
+                    onQuizEnd(score, questions.length, userAnswers);
+                } else {
+                    setCurrentQuestionIndex(prev => prev + 1);
+                    setSelectedOption(null);
+                    setFeedbackVisible(false);
+                }
+            };
+            
+            const handleTerminate = () => {
+                onQuizEnd(score, questions.length, userAnswers);
+            };
+
+            const totalQuestions = questions.length;
+            const progressPercentage = (currentQuestionIndex / totalQuestions) * 100;
+
+            const OptionButton = ({ option, index }) => {
+                let statusStyle = 'bg-white hover:bg-gray-100 text-gray-800 shadow-md';
+                let checkMark = null;
+
+                if (feedbackVisible) {
+                    const isSelected = option === selectedOption;
+                    const isCorrectAnswer = option === currentQuestion.answer;
+
+                    if (isCorrectAnswer) {
+                        statusStyle = 'bg-green-500 text-white shadow-xl scale-[1.02]';
+                        checkMark = '✓';
+                    } else if (isSelected) {
+                        statusStyle = 'bg-red-500 text-white shadow-xl scale-[1.02]';
+                        checkMark = '✖';
+                    } else {
+                        statusStyle = 'bg-gray-200 text-gray-500';
+                    }
+                } else if (option === selectedOption) {
+                    statusStyle = `${COLOR_ACCENT} ${COLOR_ACCENT_TEXT} shadow-lg`;
+                }
+
+                return (
+                    <button
+                        onClick={() => handleOptionSelect(option)}
+                        disabled={feedbackVisible}
+                        className={`w-full py-4 px-4 text-left font-semibold rounded-lg transition-all duration-300 transform mb-3 ${statusStyle}`}
+                    >
+                        <span className="mr-3 font-mono">{String.fromCharCode(65 + index)}.</span>
+                        {option}
+                        {checkMark && <span className="float-right font-extrabold text-xl">{checkMark}</span>}
+                    </button>
+                );
+            };
+
+
+            return (
+                <div className="w-full">
+                    {/* Progress Bar and Indicator */}
+                    <div className="mb-6">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">
+                            Question {currentQuestionIndex + 1} of {totalQuestions}
+                        </p>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div 
+                                className={`h-2.5 rounded-full ${COLOR_PRIMARY}`} 
+                                style={{ width: `${progressPercentage}%` }}
+                            ></div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-xl shadow-2xl">
+                        <ImageCarousel images={currentQuestion.images} />
+                        
+                        <h2 className="text-xl font-bold mb-6 text-gray-800">
+                            {currentQuestionIndex + 1}. {currentQuestion.question}
+                        </h2>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {currentQuestion.options.map((option, index) => (
+                                <OptionButton key={index} option={option} index={index} />
+                            ))}
+                        </div>
+
+                        {/* Submission and Next Buttons */}
+                        <div className="mt-6 flex flex-col space-y-4">
+                            {!feedbackVisible ? (
+                                <Button 
+                                    onClick={handleSubmitAnswer} 
+                                    color="accent"
+                                    disabled={!isAnswered}
+                                    className="sm:w-1/2 mx-auto"
+                                >
+                                    Submit Answer
+                                </Button>
+                            ) : (
+                                <Button 
+                                    onClick={handleNextQuestion} 
+                                    color="primary"
+                                    className="sm:w-1/2 mx-auto"
+                                >
+                                    {isLastQuestion ? 'View Results' : 'Next Question'}
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Feedback and Explanation */}
+                        {feedbackVisible && (
+                            <div className="mt-8 p-4 bg-gray-50 rounded-lg shadow-inner">
+                                <p className={`text-lg font-bold mb-2 ${selectedOption === currentQuestion.answer ? 'text-green-600' : 'text-red-600'}`}>
+                                    {selectedOption === currentQuestion.answer ? 'Correct!' : 'Incorrect.'} 
+                                    <span className="ml-2 font-normal text-sm text-gray-700">The correct answer was: **{currentQuestion.answer}**</span>
+                                </p>
+                                <p className="text-gray-700 leading-relaxed text-sm">
+                                    **Explanation:** {currentQuestion.explanation}
+                                </p>
+
+                                {currentQuestion.answerImage && (
+                                    <div className="mt-4">
+                                        <img 
+                                            src={currentQuestion.answerImage} 
+                                            alt="Answer Visualization" 
+                                            className="w-full max-h-64 object-contain rounded-lg shadow-md mx-auto" 
+                                            onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x160/ef4444/ffffff?text=Answer+Image+Load+Error"; }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Terminate Button */}
+                    <div className="mt-8 text-center">
+                        <Button
+                            onClick={handleTerminate}
+                            color="danger"
+                            className="w-full sm:w-auto px-6 py-2"
+                        >
+                            End Quiz Early
+                        </Button>
+                    </div>
+                </div>
+            );
+        };
+        
+        // --- RESULTS SCREEN COMPONENT ---
+        const ResultsScreen = ({ score, totalQuestions, userAnswers, onRestart }) => {
+            const percentage = Math.round((score / totalQuestions) * 100);
+            const [reviewVisible, setReviewVisible] = useState(false);
+
+            const scoreText = useMemo(() => {
+                if (percentage >= 80) return "Excellent work! You have mastered this content.";
+                if (percentage >= 50) return "Good job! A little review will help you master the rest.";
+                return "Time for review. Let's study those explanations!";
+            }, [percentage]);
+
+            return (
+                <div className="w-full">
+                    <div className="bg-white p-8 rounded-xl shadow-2xl text-center">
+                        <h1 className={`text-4xl font-extrabold mb-4 ${percentage >= 70 ? 'text-green-600' : COLOR_PRIMARY_TEXT} ${COLOR_PRIMARY}`.replace('text-white', '')}>
+                            Quiz Complete!
+                        </h1>
+                        <p className="text-6xl font-black mb-6">
+                            {score} / {totalQuestions}
+                        </p>
+                        <p className="text-xl font-semibold mb-2 text-gray-800">
+                            Final Score: {percentage}%
+                        </p>
+                        <p className="text-lg text-gray-600 mb-8">{scoreText}</p>
+
+                        <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                            <Button 
+                                onClick={onRestart} 
+                                color="primary" 
+                                className="w-full sm:w-auto"
+                            >
+                                Try Again
+                            </Button>
+                            <Button 
+                                onClick={() => setReviewVisible(!reviewVisible)} 
+                                color="default"
+                                className="w-full sm:w-auto"
+                            >
+                                {reviewVisible ? 'Hide Review' : 'Review Your Answers'}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Review Section */}
+                    {reviewVisible && (
+                        <div className="mt-8 p-6 bg-white rounded-xl shadow-2xl">
+                            <h2 className="text-2xl font-bold mb-6 border-b pb-2 text-gray-800">Review Summary</h2>
+                            {userAnswers.map((item, index) => (
+                                <div key={index} className={`p-4 mb-4 rounded-lg border-l-4 ${item.isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                                    <p className="font-semibold text-lg text-gray-800 mb-2">
+                                        {index + 1}. {item.question}
+                                    </p>
+                                    <p className="text-sm">
+                                        **Your Answer:** <span className={`font-medium ${item.isCorrect ? 'text-green-600' : 'text-red-600'}`}>{item.userSelection} {item.isCorrect ? '(Correct)' : '(Incorrect)'}</span>
+                                    </p>
+                                    {!item.isCorrect && (
+                                        <p className="text-sm">
+                                            **Correct Answer:** <span className="font-medium text-green-600">{item.answer}</span>
+                                        </p>
+                                    )}
+                                    <div className="mt-3 text-xs text-gray-700 leading-relaxed">
+                                        **Explanation:** {item.explanation}
+                                    </div>
+                                    {item.answerImage && (
+                                        <div className="mt-4">
+                                            <img 
+                                                src={item.answerImage} 
+                                                alt="Answer Visualization" 
+                                                className="w-full max-h-40 object-contain rounded-lg shadow-md mx-auto" 
+                                                onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x100/ef4444/ffffff?text=Image+Error"; }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        
+        // --- PAYWALL/START SCREEN COMPONENT ---
+        
+        const PaywallScreen = ({ onStartQuiz, isSubscriber, onSimulatePurchase, onStartSample }) => {
+            const categories = useMemo(() => getUniqueCategories(quizData), []);
+            const [selectedCategory, setSelectedCategory] = useState(null);
+            
+            const handleStart = (isSample = false) => {
+                let filteredQuestions = quizData;
+                
+                if (!isSample && selectedCategory && selectedCategory !== 'All Categories') {
+                    filteredQuestions = quizData.filter(q => q.category.includes(selectedCategory));
+                } else if (isSample) {
+                    filteredQuestions = quizData.slice(0, FREE_QUESTION_COUNT);
+                }
+                
+                const randomizedQuestions = shuffleArray(filteredQuestions);
+                onStartQuiz(randomizedQuestions);
+            };
+
+            const renderCategorySelector = () => (
+                <div className="mt-6">
+                    <h2 className="text-xl font-semibold mb-4 text-gray-800">1. Select Quiz Category:</h2>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {['All Categories', ...categories].map(category => (
+                            <button
+                                key={category}
+                                onClick={() => setSelectedCategory(category)}
+                                className={`py-3 px-4 text-sm font-medium rounded-lg shadow transition-all duration-150 ${
+                                    selectedCategory === category
+                                        ? `${COLOR_ACCENT} ${COLOR_ACCENT_TEXT} scale-[1.05]`
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                {category}
+                            </button>
+                        ))}
+                    </div>
+
+                    <h2 className="text-xl font-semibold mb-4 mt-6 text-gray-800">2. Start Quiz:</h2>
+                    <Button 
+                        onClick={() => handleStart(false)} 
+                        color="primary"
+                        disabled={!selectedCategory}
+                        className="mt-2"
+                    >
+                        Start Full Quiz ({quizData.length} Questions)
+                    </Button>
+                </div>
+            );
+
+            const renderPaywall = () => (
+                <div className="mt-8 p-6 bg-red-50 border-2 border-red-300 rounded-xl shadow-xl">
+                    <h2 className="text-2xl font-extrabold text-red-700 mb-3">Full Access Required</h2>
+                    <p className="text-gray-600 mb-6">
+                        Unlock the full library of advanced diagnostic questions and detailed explanations by subscribing today.
+                    </p>
+                    <Button 
+                        onClick={onSimulatePurchase} 
+                        color="danger"
+                    >
+                        Simulate Purchase & Unlock Full Access
+                    </Button>
+                </div>
+            );
+
+            return (
+                <div className="w-full">
+                    <h1 className="text-3xl font-extrabold text-gray-900 leading-tight text-center mb-6">CBCT in Endodontics Mastery Quiz</h1>
+                    
+                    <div className="bg-white p-6 rounded-xl shadow-2xl">
+                        {isSubscriber ? (
+                            renderCategorySelector()
+                        ) : (
+                            <>
+                                <h2 className="text-xl font-semibold mb-4 text-gray-800">Try Before You Buy:</h2>
+                                <Button 
+                                    onClick={onStartSample} 
+                                    color="accent" 
+                                    className="mb-6"
+                                >
+                                    Start Free Sample ({FREE_QUESTION_COUNT} Questions)
+                                </Button>
+                                {renderPaywall()}
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN APP COMPONENT ---
+
+        const App = () => {
+            const [authState, setAuthState] = useState({ 
+                isAuthReady: false, 
+                userId: null, 
+                isSubscriber: false,
+                dbInstance: null,
+                authInstance: null,
+                docRef: null 
+            });
+            const [currentScreen, setCurrentScreen] = useState('start'); // 'start', 'quiz', 'results'
+            const [quizState, setQuizState] = useState({
+                questions: [],
+                score: 0,
+                totalQuestions: 0,
+                userAnswers: [],
+            });
+
+            // 1. FIREBASE AUTHENTICATION & INITIALIZATION
+            useEffect(() => {
+                let unsubscribe = () => {};
+
+                const handleSignIn = async () => {
+                    if (!app || !auth || !db) return;
+
+                    try {
+                        let userCredential;
+                        if (__initial_auth_token) {
+                            userCredential = await auth.signInWithCustomToken(__initial_auth_token);
+                        } else {
+                            userCredential = await auth.signInAnonymously();
+                        }
+
+                        const userId = userCredential.user.uid;
+                        const appIdClean = typeof __app_id === 'string' ? __app_id.split('/')[0] : 'default-app-id';
+                        const docPath = `artifacts/${appIdClean}/users/${userId}/profile/status`;
+
+                        const docRef = db.doc(docPath);
+                        
+                        setAuthState(prev => ({ 
+                            ...prev, 
+                            userId, 
+                            dbInstance: db, 
+                            authInstance: auth,
+                            docRef: docRef,
+                            isAuthReady: true 
+                        }));
+                        
+                        // Start listener for subscription status
+                        unsubscribe = docRef.onSnapshot(doc => {
+                            const isSubscribed = doc.exists && doc.data()?.subscribed === true;
+                            setAuthState(prev => ({ ...prev, isSubscriber: isSubscribed }));
+                        }, err => {
+                            console.error("Firestore Listener Error:", err);
+                        });
+
+                    } catch (error) {
+                        console.error("Firebase Auth Error:", error);
+                        setAuthState(prev => ({ ...prev, isAuthReady: true }));
+                    }
+                };
+
+                handleSignIn();
+
+                // Cleanup listener on component unmount
+                return () => {
+                    if (unsubscribe) unsubscribe();
+                };
+            }, []);
+
+            // 2. PAYWALL/SUBSCRIPTION LOGIC
+            const handleSimulatePurchase = async () => {
+                if (authState.docRef) {
+                    try {
+                        // Set the subscription status to true
+                        await authState.docRef.set({ subscribed: true }, { merge: true });
+                        // The onSnapshot listener will update isSubscriber automatically
+                    } catch (error) {
+                        console.error("Purchase Simulation Failed:", error);
+                    }
+                }
+            };
+            
+            // 3. QUIZ FLOW HANDLERS
+
+            const handleStartQuiz = useCallback((questions) => {
+                setQuizState(prev => ({ 
+                    ...prev, 
+                    questions: questions,
+                    score: 0,
+                    totalQuestions: questions.length,
+                    userAnswers: [],
+                }));
+                setCurrentScreen('quiz');
+            }, []);
+
+            const handleQuizEnd = useCallback((finalScore, total, answers) => {
+                setQuizState(prev => ({ 
+                    ...prev, 
+                    score: finalScore, 
+                    totalQuestions: total, 
+                    userAnswers: answers 
+                }));
+                setCurrentScreen('results');
+            }, []);
+
+            const handleRestart = useCallback(() => {
+                setCurrentScreen('start');
+                setQuizState({
+                    questions: [],
+                    score: 0,
+                    totalQuestions: 0,
+                    userAnswers: [],
+                });
+            }, []);
+            
+            const handleStartSample = useCallback(() => {
+                // The sample handles question filtering internally
+                const sampleQuestions = quizData.slice(0, FREE_QUESTION_COUNT);
+                const randomizedSample = shuffleArray(sampleQuestions);
+                handleStartQuiz(randomizedSample);
+            }, [handleStartQuiz]);
+
+
+            const renderScreen = () => {
+                if (!authState.isAuthReady) {
+                    return <LoadingSpinner />;
+                }
+
+                switch (currentScreen) {
+                    case 'quiz':
+                        return <QuizScreen 
+                                    questions={quizState.questions} 
+                                    onQuizEnd={handleQuizEnd} 
+                                    onTerminate={handleQuizEnd}
+                                />;
+                    case 'results':
+                        return <ResultsScreen 
+                                    score={quizState.score} 
+                                    totalQuestions={quizState.totalQuestions} 
+                                    userAnswers={quizState.userAnswers}
+                                    onRestart={handleRestart}
+                                />;
+                    case 'start':
+                    default:
+                        return <PaywallScreen 
+                                    onStartQuiz={handleStartQuiz} 
+                                    isSubscriber={authState.isSubscriber}
+                                    onSimulatePurchase={handleSimulatePurchase}
+                                    onStartSample={handleStartSample}
+                                />;
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50 flex flex-col items-center p-4">
+                    <div className="w-full max-w-2xl mt-8 mb-12">
+                        <div className="flex justify-between items-center mb-4 text-gray-500 text-sm">
+                            <span>{authState.isSubscriber ? 'Status: Full Access' : 'Status: Free Mode'}</span>
+                            <span className="truncate">User ID: {authState.userId || 'Loading...'}</span>
+                        </div>
+                        {renderScreen()}
+                    </div>
+                </div>
+            );
+        };
+        
         // This is the necessary JavaScript to kick off the React app once the file is loaded
         const rootElement = document.getElementById('root');
         if (rootElement) {
