@@ -24,34 +24,28 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
-        // Start of the Quiz Application Code (formerly src/App.jsx)
-        
-<script type="text/babel" data-presets="env">
-  // Start of the Quiz Application Code (formerly src/App.jsx)
-  
+<!-- 1️⃣ Plain JS: Firebase config fallback (no Babel) -->
+<script>
   // --- FIREBASE CONFIG FALLBACK (SAFE FOR VERCEL DEPLOYMENT) ---
-  let firebaseConfig = {};
-  let __app_id = 'default-app-id';
-  let __initial_auth_token = undefined;
+  window.__app_id = window.__app_id || 'default-app-id';
+  window.__initial_auth_token = window.__initial_auth_token || undefined;
 
   try {
-    // Pull from environment if available
-    if (typeof window !== 'undefined') {
-      __app_id = window.__app_id || 'default-app-id';
-      __initial_auth_token = window.__initial_auth_token || undefined;
-
-      // Try to read Firebase config from window
-      const configString = window.__firebase_config || '{}';
-      firebaseConfig = JSON.parse(configString || '{}');
-    }
+    const configString = window.__firebase_config || '{}';
+    window.__firebase_config = configString;
+    window.firebaseConfig = JSON.parse(configString || '{}');
   } catch (err) {
     console.warn("⚠️ Firebase config missing or invalid. Running in local demo mode.");
-    firebaseConfig = {};
+    window.firebaseConfig = {};
   }
+</script>
 
+<!-- 2️⃣ React App Code (compiled by Babel) -->
+<script type="text/babel">
+  // Start of the Quiz Application Code (formerly src/App.jsx)
+  
   const { useState, useEffect, useMemo, useCallback } = React;
-
+  const firebaseConfig = window.firebaseConfig;
 
   // --- THEME CONSTANTS (Oceanic Theme) ---
   const COLOR_PRIMARY = 'bg-blue-600';
@@ -63,6 +57,7 @@
   const COLOR_ACCENT_TEXT = 'text-gray-900';
 
   const FREE_QUESTION_COUNT = 2;
+
 
         
         // --- THEME CONSTANTS (Oceanic Theme) ---
