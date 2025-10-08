@@ -4,18 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBCT in Endodontics Mastery Quiz</title>
+
     <!-- Load Tailwind CSS from CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- Font Inter for professional look -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
     <style>
         body { font-family: 'Inter', sans-serif; }
     </style>
+
     <!-- Load React and ReactDOM from CDN -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
     <!-- Load Babel for JSX compilation in the browser -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
     <!-- Load Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
@@ -24,52 +30,39 @@
 <body>
     <div id="root"></div>
 
-<!-- 1️⃣ Plain JS: Firebase config fallback (no Babel) -->
-<script>
-  // --- FIREBASE CONFIG FALLBACK (SAFE FOR VERCEL DEPLOYMENT) ---
-  window.__app_id = window.__app_id || 'default-app-id';
-  window.__initial_auth_token = window.__initial_auth_token || undefined;
+    <!-- 1️⃣ Plain JS: Firebase config fallback (no Babel) -->
+    <script>
+      // --- FIREBASE CONFIG FALLBACK (SAFE FOR VERCEL DEPLOYMENT) ---
+      window.__app_id = window.__app_id || 'default-app-id';
+      window.__initial_auth_token = window.__initial_auth_token || undefined;
 
-  try {
-    const configString = window.__firebase_config || '{}';
-    window.__firebase_config = configString;
-    window.firebaseConfig = JSON.parse(configString || '{}');
-  } catch (err) {
-    console.warn("⚠️ Firebase config missing or invalid. Running in local demo mode.");
-    window.firebaseConfig = {};
-  }
-</script>
+      try {
+        const configString = window.__firebase_config || '{}';
+        window.__firebase_config = configString;
+        window.firebaseConfig = JSON.parse(configString || '{}');
+      } catch (err) {
+        console.warn("⚠️ Firebase config missing or invalid. Running in local demo mode.");
+        window.firebaseConfig = {};
+      }
+    </script>
 
-<!-- 2️⃣ React App Code (compiled by Babel) -->
-<script type="text/babel">
-  // Start of the Quiz Application Code (formerly src/App.jsx)
-  
-  const { useState, useEffect, useMemo, useCallback } = React;
-  const firebaseConfig = window.firebaseConfig;
+    <!-- 2️⃣ React App Code (compiled by Babel) -->
+    <script type="text/babel">
+      // Start of the Quiz Application Code (formerly src/App.jsx)
+      
+      const { useState, useEffect, useMemo, useCallback } = React;
+      const firebaseConfig = window.firebaseConfig;
 
-  // --- THEME CONSTANTS (Oceanic Theme) ---
-  const COLOR_PRIMARY = 'bg-blue-600';
-  const COLOR_PRIMARY_HOVER = 'hover:bg-blue-700';
-  const COLOR_PRIMARY_TEXT = 'text-white';
-  
-  const COLOR_ACCENT = 'bg-teal-400';
-  const COLOR_ACCENT_HOVER = 'hover:bg-teal-500';
-  const COLOR_ACCENT_TEXT = 'text-gray-900';
+      // --- THEME CONSTANTS (Oceanic Theme) ---
+      const COLOR_PRIMARY = 'bg-blue-600';
+      const COLOR_PRIMARY_HOVER = 'hover:bg-blue-700';
+      const COLOR_PRIMARY_TEXT = 'text-white';
+      
+      const COLOR_ACCENT = 'bg-teal-400';
+      const COLOR_ACCENT_HOVER = 'hover:bg-teal-500';
+      const COLOR_ACCENT_TEXT = 'text-gray-900';
 
-  const FREE_QUESTION_COUNT = 2;
-
-
-        
-        // --- THEME CONSTANTS (Oceanic Theme) ---
-        const COLOR_PRIMARY = 'bg-blue-600';
-        const COLOR_PRIMARY_HOVER = 'hover:bg-blue-700';
-        const COLOR_PRIMARY_TEXT = 'text-white';
-        
-        const COLOR_ACCENT = 'bg-teal-400';
-        const COLOR_ACCENT_HOVER = 'hover:bg-teal-500';
-        const COLOR_ACCENT_TEXT = 'text-gray-900';
-
-        const FREE_QUESTION_COUNT = 2;
+      const FREE_QUESTION_COUNT = 2;
 
         // --- QUIZ DATA ---
         const quizData = [
