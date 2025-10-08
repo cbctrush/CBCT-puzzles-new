@@ -49,7 +49,7 @@
     <!-- 2️⃣ React App Code (compiled by Babel) -->
     <script type="text/babel">
       // Start of the Quiz Application Code (formerly src/App.jsx)
-      
+        
       const { useState, useEffect, useMemo, useCallback } = React;
       const firebaseConfig = window.firebaseConfig;
 
@@ -57,7 +57,7 @@
       const COLOR_PRIMARY = 'bg-blue-600';
       const COLOR_PRIMARY_HOVER = 'hover:bg-blue-700';
       const COLOR_PRIMARY_TEXT = 'text-white';
-      
+        
       const COLOR_ACCENT = 'bg-teal-400';
       const COLOR_ACCENT_HOVER = 'hover:bg-teal-500';
       const COLOR_ACCENT_TEXT = 'text-gray-900';
@@ -686,6 +686,14 @@
             const categories = useMemo(() => getUniqueCategories(quizData), []);
             const [selectedCategory, setSelectedCategory] = useState(null);
             
+            // CRITICAL: Filtered count calculation must be done here before rendering the button
+            const filteredQuestionCount = useMemo(() => {
+                if (!selectedCategory || selectedCategory === 'All Categories') {
+                    return quizData.length;
+                }
+                return quizData.filter(q => q.category.includes(selectedCategory)).length;
+            }, [selectedCategory]);
+
             const handleStart = (isSample = false) => {
                 let filteredQuestions = quizData;
                 
@@ -722,11 +730,14 @@
                     <Button 
                         onClick={() => handleStart(false)} 
                         color="primary"
-                        disabled={!selectedCategory}
+                        disabled={!selectedCategory || filteredQuestionCount === 0}
                         className="mt-2"
                     >
-                        Start Full Quiz ({quizData.length} Questions)
+                        Start Quiz ({filteredQuestionCount} Questions)
                     </Button>
+                    {filteredQuestionCount === 0 && (
+                        <p className="mt-2 text-sm text-red-500">No questions available for this category.</p>
+                    )}
                 </div>
             );
 
@@ -798,7 +809,7 @@
                     if (!app || !auth || !db) {
                          setAuthState(prev => ({ 
                             ...prev, 
-                            isSubscriber: true, // Force access in demo mode
+                            isSubscriber: false, // CHANGED: Setting to false to show the paywall on Vercel
                             isAuthReady: true,
                             userId: 'LOCAL_DEMO_USER'
                         }));
@@ -807,14 +818,14 @@
 
                     try {
                         let userCredential;
-                        if (__initial_auth_token) {
-                            userCredential = await auth.signInWithCustomToken(__initial_auth_token);
+                        if (window.__initial_auth_token) {
+                            userCredential = await auth.signInWithCustomToken(window.__initial_auth_token);
                         } else {
                             userCredential = await auth.signInAnonymously();
                         }
 
                         const userId = userCredential.user.uid;
-                        const appIdClean = typeof __app_id === 'string' ? __app_id.split('/')[0] : 'default-app-id';
+                        const appIdClean = typeof window.__app_id === 'string' ? window.__app_id.split('/')[0] : 'default-app-id';
                         const docPath = `artifacts/${appIdClean}/users/${userId}/profile/status`;
 
                         const docRef = db.doc(docPath);
