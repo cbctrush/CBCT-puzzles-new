@@ -1,9 +1,6 @@
 {
-  "name": "dental-quiz-app",
+  "name": "cbct-puzzles",
   "version": "1.0.0",
-  "description": "Professional CBCT Quiz Application built with React.",
-  "main": "index.html",
-  "scripts": {
-    "start": "echo 'No build required'"
-  }
+  "description": "CBCT Quiz static site",
+  "scripts": {}
 }
