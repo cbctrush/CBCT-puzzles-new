@@ -27,13 +27,42 @@
     <script type="text/babel">
         // Start of the Quiz Application Code (formerly src/App.jsx)
         
-        // Global variables provided by the environment for Firebase setup
-        const __app_id = typeof window !== 'undefined' ? window.__app_id : 'default-app-id';
-        const __firebase_config = typeof window !== 'undefined' ? window.__firebase_config : '{}';
-        const __initial_auth_token = typeof window !== 'undefined' ? window.__initial_auth_token : undefined;
+<script type="text/babel">
+  // Start of the Quiz Application Code (formerly src/App.jsx)
+  
+  // --- FIREBASE CONFIG FALLBACK (SAFE FOR VERCEL DEPLOYMENT) ---
+  let firebaseConfig = {};
+  let __app_id = 'default-app-id';
+  let __initial_auth_token = undefined;
 
-        const { useState, useEffect, useMemo, useCallback } = React;
-        const firebaseConfig = JSON.parse(__firebase_config);
+  try {
+    // Pull from environment if available
+    if (typeof window !== 'undefined') {
+      __app_id = window.__app_id || 'default-app-id';
+      __initial_auth_token = window.__initial_auth_token || undefined;
+
+      // Try to read Firebase config from window
+      const configString = window.__firebase_config || '{}';
+      firebaseConfig = JSON.parse(configString || '{}');
+    }
+  } catch (err) {
+    console.warn("⚠️ Firebase config missing or invalid. Running in local demo mode.");
+    firebaseConfig = {};
+  }
+
+  const { useState, useEffect, useMemo, useCallback } = React;
+
+  // --- THEME CONSTANTS (Oceanic Theme) ---
+  const COLOR_PRIMARY = 'bg-blue-600';
+  const COLOR_PRIMARY_HOVER = 'hover:bg-blue-700';
+  const COLOR_PRIMARY_TEXT = 'text-white';
+  
+  const COLOR_ACCENT = 'bg-teal-400';
+  const COLOR_ACCENT_HOVER = 'hover:bg-teal-500';
+  const COLOR_ACCENT_TEXT = 'text-gray-900';
+
+  const FREE_QUESTION_COUNT = 2;
+
         
         // --- THEME CONSTANTS (Oceanic Theme) ---
         const COLOR_PRIMARY = 'bg-blue-600';
